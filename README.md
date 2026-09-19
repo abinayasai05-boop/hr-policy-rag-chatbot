@@ -4,7 +4,6 @@ A Retrieval-Augmented Generation (RAG) based **HR Policy Information Assistant**
 
 The system combines **BGE-M3 embeddings**, **PostgreSQL with pgvector**, **semantic search**, and **Google Gemini** to retrieve relevant HR policies and generate grounded answers.
 
----
 
 ## 📌 Project Overview
 
@@ -23,7 +22,6 @@ Instead of relying only on an LLM, this system first searches the organization's
 
 This reduces the risk of the chatbot generating information that is not present in the organization's policies.
 
----
 
 ## 🎯 Objectives
 
@@ -39,7 +37,6 @@ The main objectives of this project are:
 8. Reduce hallucinations by grounding responses in retrieved policies.
 9. Create a foundation that can later support conversational memory and voice-based assistants.
 
----
 
 ## 🧠 What is RAG?
 
@@ -111,9 +108,7 @@ This allows the chatbot to answer questions using the organization's private kno
                     ┌─────────────────────┐
                     │  Grounded Response  │
                     └─────────────────────┘
-```
 
----
 
 ## 🔄 RAG Pipeline
 
@@ -129,13 +124,12 @@ Category: Leave
 Title: Annual Leave
 
 Employees are entitled to 20 days of annual leave per year.
-```
 
 The documents are processed into smaller pieces called **chunks**.
 
 Chunking makes it easier to retrieve only the relevant part of a document.
 
----
+
 
 ### 2. Embedding Generation
 
@@ -153,9 +147,7 @@ For example:
 
 is converted into an embedding vector.
 
-The same process is applied to the HR policy documents.
-
----
+The same process is applied to the HR policy documents
 
 ### 3. Vector Database
 
@@ -174,9 +166,8 @@ HR Policy
  ├── title
  ├── content
  └── embedding
-```
 
----
+
 
 ### 4. Semantic Search
 
@@ -198,8 +189,6 @@ Retrieved Policy:
 
 Even though the wording is different, the system can identify the semantic relationship.
 
----
-
 ### 5. Context Retrieval
 
 The most relevant policy chunks are passed to the LLM as context.
@@ -214,7 +203,6 @@ Retrieved Context:
 Employees may work remotely with prior manager approval.
 ```
 
----
 
 ### 6. LLM Response Generation
 
@@ -225,7 +213,7 @@ Google Gemini receives:
 
 It then generates a natural-language response based on the retrieved information.
 
----
+
 
 ## 🛡️ Hallucination Handling
 
@@ -243,7 +231,6 @@ The chatbot should not invent:
 
 ```text
 Employees are entitled to 30 days of annual leave.
-```
 
 ### Grounding Strategy
 
@@ -265,7 +252,6 @@ If relevant information cannot be found in the HR knowledge base, the chatbot ca
 
 This makes the system more suitable for private organizational knowledge.
 
----
 
 ## 🧩 Technologies Used
 
@@ -282,7 +268,6 @@ This makes the system more suitable for private organizational knowledge.
 | Git           | Version control                            |
 | GitHub        | Source code hosting                        |
 
----
 
 ## 📂 Project Structure
 
@@ -306,7 +291,6 @@ hr-policy-rag-chatbot/
 
 > `.env` is intentionally excluded from GitHub because it contains sensitive credentials.
 
----
 
 ## 🗄️ Database Design
 
@@ -330,7 +314,6 @@ PostgreSQL
 
 This allows both structured data and vector embeddings to be managed within the same database system.
 
----
 
 ## 🔍 Example Questions
 
@@ -348,7 +331,6 @@ Do I need manager approval for remote work?
 What is the notice period?
 
 What is the sick leave policy?
-```
 
 ### Example
 
@@ -372,7 +354,6 @@ Employees are entitled to 20 days of annual leave per year.
 
 The answer is grounded in the HR policy stored in the knowledge base.
 
----
 
 ## ⚙️ Installation
 
@@ -406,7 +387,6 @@ Activate it:
 pip install -r requirements.txt
 ```
 
----
 
 ## 🔐 Environment Variables
 
@@ -428,8 +408,6 @@ __pycache__/
 *.pyc
 ```
 
----
-
 ## 🐘 PostgreSQL + pgvector Setup
 
 Create a PostgreSQL database and enable the pgvector extension.
@@ -445,9 +423,7 @@ The database is then used to store:
 * HR policy information
 * Embedding vectors
 * Metadata required for retrieval
-
----
-
+  
 ## ▶️ Running the Project
 
 After configuring the environment variables and PostgreSQL database, run the appropriate application/ingestion scripts from the project root.
@@ -464,7 +440,6 @@ Then run the chatbot:
 python app/chatbot.py
 ```
 
----
 
 ## 🧪 Testing
 
@@ -486,8 +461,6 @@ The system:
 5. Generates a grounded response
 ```
 
----
-
 ## 📊 Key Concepts Demonstrated
 
 This project demonstrates practical understanding of:
@@ -507,8 +480,6 @@ This project demonstrates practical understanding of:
 * Prompt grounding
 * Hallucination reduction
 * Private knowledge bases
-
----
 
 ## 🚀 Future Enhancements
 
@@ -553,7 +524,7 @@ Gemini
 Text-to-Speech
      ↓
 Voice Response
-```
+
 
 ### 🌐 Web Interface
 
@@ -572,7 +543,6 @@ The knowledge base can be expanded with:
 * Travel policies
 * Resignation procedures
 
----
 
 ## 🎓 Project Outcome
 
@@ -580,7 +550,6 @@ This project provides a practical implementation of a RAG pipeline for a private
 
 It demonstrates how **embedding models, vector databases, semantic retrieval, and LLMs** can work together to create an AI assistant that answers questions using organization-specific information rather than relying only on the LLM's general knowledge.
 
----
 
 ## 👩‍💻 Author
 
@@ -589,7 +558,6 @@ It demonstrates how **embedding models, vector databases, semantic retrieval, an
 GitHub:
 https://github.com/abinayasai05-boop
 
----
 
 ## 📜 License
 
