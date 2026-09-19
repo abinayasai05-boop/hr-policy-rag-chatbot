@@ -4,5 +4,5 @@ pandas
 numpy
 flask
 gunicorn
-qdrant-client
+psycopg2-binary
 sentence-transformers
