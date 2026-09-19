@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>HR Policy AI Assistant</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <div class="app-container">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+
+            <div class="brand">
+                <div class="brand-icon">✦</div>
+
+                <div>
+                    <h2>HR Policy AI</h2>
+                    <span>Smart HR Assistant</span>
+                </div>
+            </div>
+
+            <button class="new-chat" onclick="clearChat()">
+                <span>＋</span>
+                New Conversation
+            </button>
+
+            <div class="sidebar-section">
+
+                <p class="section-title">Suggested Questions</p>
+
+                <button class="suggestion"
+                    onclick="askQuestion('How many days of annual leave can employees take?')">
+                    🏖️ Annual Leave
+                </button>
+
+                <button class="suggestion"
+                    onclick="askQuestion('What is the maternity leave policy?')">
+                    👶 Maternity Leave
+                </button>
+
+                <button class="suggestion"
+                    onclick="askQuestion('Can employees work from home?')">
+                    🏠 Work From Home
+                </button>
+
+                <button class="suggestion"
+                    onclick="askQuestion('What are the standard working hours?')">
+                    🕘 Working Hours
+                </button>
+
+                <button class="suggestion"
+                    onclick="askQuestion('What is the notice period when resigning?')">
+                    📄 Notice Period
+                </button>
+
+            </div>
+
+            <div class="sidebar-bottom">
+
+                <div class="status">
+                    <span class="status-dot"></span>
+                    System Online
+                </div>
+
+                <div class="powered">
+                    Powered by Gemini + RAG
+                </div>
+
+            </div>
+
+        </aside>
+
+
+        <!-- MAIN CHAT -->
+        <main class="chat-area">
+
+            <!-- HEADER -->
+            <header class="chat-header">
+
+                <div class="assistant-info">
+
+                    <div class="assistant-avatar">
+                        ✦
+                    </div>
+
+                    <div>
+                        <h1>HR Policy Assistant</h1>
+
+                        <div class="online-status">
+                            <span></span>
+                            Online
+                        </div>
+                    </div>
+
+                </div>
+
+                <button class="clear-button" onclick="clearChat()">
+                    Clear
+                </button>
+
+            </header>
+
+
+            <!-- MESSAGES -->
+            <section class="messages" id="messages">
+
+                <div class="message bot-message">
+
+                    <div class="avatar bot-avatar">
+                        ✦
+                    </div>
+
+                    <div class="message-content">
+
+                        <div class="sender">
+                            HR Policy AI
+                        </div>
+
+                        <div class="bubble">
+                            Hello! 👋<br><br>
+
+                            I'm your HR Policy Assistant. I can help you find
+                            information from the company's HR policies.
+
+                            <br><br>
+
+                            Ask me about leave, working hours, work from home,
+                            resignation, payroll, training, and more.
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="welcome-cards">
+
+                    <div class="welcome-card"
+                        onclick="askQuestion('How many days of annual leave can employees take?')">
+
+                        <span>🏖️</span>
+
+                        <div>
+                            <strong>Annual Leave</strong>
+                            <small>Ask about leave entitlement</small>
+                        </div>
+
+                    </div>
+
+
+                    <div class="welcome-card"
+                        onclick="askQuestion('What is the maternity leave policy?')">
+
+                        <span>👶</span>
+
+                        <div>
+                            <strong>Maternity Leave</strong>
+                            <small>Check maternity benefits</small>
+                        </div>
+
+                    </div>
+
+
+                    <div class="welcome-card"
+                        onclick="askQuestion('Can employees work from home?')">
+
+                        <span>🏠</span>
+
+                        <div>
+                            <strong>Work From Home</strong>
+                            <small>Check remote work policy</small>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- TYPING INDICATOR -->
+            <div class="typing-container" id="typing">
+
+                <div class="typing-bubble">
+
+                    <span></span>
+                    <span></span>
+                    <span></span>
+
+                </div>
+
+                <small>HR Policy AI is thinking...</small>
+
+            </div>
+
+
+            <!-- INPUT -->
+            <footer class="input-area">
+
+                <div class="input-box">
+
+                    <textarea
+                        id="question"
+                        placeholder="Ask anything about HR policies..."
+                        rows="1"
+                        onkeydown="handleKey(event)"
+                    ></textarea>
+
+                    <button id="sendButton" onclick="sendMessage()">
+
+                        <span>➤</span>
+
+                    </button>
+
+                </div>
+
+                <p class="input-note">
+                    HR Policy AI answers using information from your policy database.
+                </p>
+
+            </footer>
+
+        </main>
+
+    </div>
+
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
+
+</html>

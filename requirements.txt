@@ -1,0 +1,8 @@
+google-genai
+python-dotenv
+pandas
+numpy
+flask
+gunicorn
+qdrant-client
+sentence-transformers
