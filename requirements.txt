@@ -5,4 +5,3 @@ numpy
 flask
 gunicorn
 psycopg2-binary
-sentence-transformers

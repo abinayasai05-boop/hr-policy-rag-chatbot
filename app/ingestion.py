@@ -1,40 +1,109 @@
+import os
 import pandas as pd
-from sentence_transformers import SentenceTransformer
+from google import genai
+from google.genai import types
+from dotenv import load_dotenv
 
 from app.database import get_connection
 
 
-print("Loading BGE-M3 embedding model...")
+# ============================================================
+# LOAD ENVIRONMENT VARIABLES
+# ============================================================
 
-model = SentenceTransformer("BAAI/bge-m3")
-
-print("BGE-M3 loaded successfully!")
+load_dotenv()
 
 
-# Load HR policy dataset
+# ============================================================
+# GEMINI EMBEDDING CLIENT
+# ============================================================
+
+print("Initializing Gemini Embedding 2...")
+
+client = genai.Client(
+    api_key=os.getenv("GEMINI_API_KEY")
+)
+
+EMBEDDING_MODEL = os.getenv(
+    "GEMINI_EMBEDDING_MODEL",
+    "gemini-embedding-2"
+)
+
+EMBEDDING_DIMENSION = int(
+    os.getenv(
+        "EMBEDDING_DIMENSION",
+        "768"
+    )
+)
+
+print("Gemini Embedding 2 initialized successfully!")
+print(f"Embedding model: {EMBEDDING_MODEL}")
+print(f"Embedding dimension: {EMBEDDING_DIMENSION}")
+
+
+# ============================================================
+# FUNCTION TO CREATE EMBEDDING
+# ============================================================
+
+def create_embedding(text):
+    """
+    Generate a cloud-based embedding using Gemini Embedding 2.
+    """
+
+    result = client.models.embed_content(
+        model=EMBEDDING_MODEL,
+        contents=text,
+        config=types.EmbedContentConfig(
+            output_dimensionality=EMBEDDING_DIMENSION
+        )
+    )
+
+    return result.embeddings[0].values
+
+
+# ============================================================
+# LOAD HR POLICY DATASET
+# ============================================================
+
 df = pd.read_csv("data/hr_policies.csv")
 
 print("\nHR Policy Dataset Loaded Successfully!")
 print(f"Number of policies: {len(df)}")
 
 
-# Connect to PostgreSQL
+# ============================================================
+# CONNECT TO POSTGRESQL
+# ============================================================
+
 conn = get_connection()
 cursor = conn.cursor()
 
 
-# Insert policies into PostgreSQL
+# ============================================================
+# INSERT POLICIES INTO POSTGRESQL
+# ============================================================
+
 for _, row in df.iterrows():
 
-    text = f"{row['title']}: {row['content']}"
+    # Create text that represents the HR policy
+    text = (
+        f"title: {row['title']} | "
+        f"text: {row['content']}"
+    )
 
-    print(f"Creating embedding for {row['policy_id']} - {row['title']}")
+    print(
+        f"Creating Gemini embedding for "
+        f"{row['policy_id']} - {row['title']}"
+    )
 
-    embedding = model.encode(
-        text,
-        normalize_embeddings=True
-    ).tolist()
+    # Generate cloud embedding
+    embedding = create_embedding(text)
 
+    print(
+        f"Embedding dimension: {len(embedding)}"
+    )
+
+    # Insert into PostgreSQL + pgvector
     cursor.execute(
         """
         INSERT INTO hr_policies
@@ -51,6 +120,10 @@ for _, row in df.iterrows():
     )
 
 
+# ============================================================
+# COMMIT CHANGES
+# ============================================================
+
 conn.commit()
 
 cursor.close()
@@ -58,4 +131,5 @@ conn.close()
 
 
 print("\nAll HR policies inserted successfully!")
-print("Embeddings stored in PostgreSQL + pgvector.")
+print("Gemini embeddings stored in PostgreSQL + pgvector.")
+print(f"Embedding dimension: {EMBEDDING_DIMENSION}")
