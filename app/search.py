@@ -1,16 +1,64 @@
-from sentence_transformers import SentenceTransformer
+import os
+
+from google import genai
+from google.genai import types
+from dotenv import load_dotenv
+
 from app.database import get_connection
 
 
 # ==========================================
-# LOAD BGE-M3
+# LOAD ENVIRONMENT VARIABLES
 # ==========================================
 
-print("Loading BGE-M3 model...")
+load_dotenv()
 
-model = SentenceTransformer("BAAI/bge-m3")
 
-print("BGE-M3 loaded successfully!")
+# ==========================================
+# GEMINI EMBEDDING CLIENT
+# ==========================================
+
+print("Initializing Gemini Embedding 2...")
+
+client = genai.Client(
+    api_key=os.getenv("GEMINI_API_KEY")
+)
+
+EMBEDDING_MODEL = os.getenv(
+    "GEMINI_EMBEDDING_MODEL",
+    "gemini-embedding-2"
+)
+
+EMBEDDING_DIMENSION = int(
+    os.getenv(
+        "EMBEDDING_DIMENSION",
+        "768"
+    )
+)
+
+print("Gemini Embedding 2 initialized successfully!")
+print(f"Embedding model: {EMBEDDING_MODEL}")
+print(f"Embedding dimension: {EMBEDDING_DIMENSION}")
+
+
+# ==========================================
+# CREATE QUERY EMBEDDING
+# ==========================================
+
+def create_query_embedding(query):
+    """
+    Create a Gemini embedding for the user's query.
+    """
+
+    result = client.models.embed_content(
+        model=EMBEDDING_MODEL,
+        contents=query,
+        config=types.EmbedContentConfig(
+            output_dimensionality=EMBEDDING_DIMENSION
+        )
+    )
+
+    return result.embeddings[0].values
 
 
 # ==========================================
@@ -20,13 +68,10 @@ print("BGE-M3 loaded successfully!")
 def search_policies(query, top_k=3):
 
     # --------------------------------------
-    # Create BGE-M3 embedding for query
+    # Create Gemini embedding for query
     # --------------------------------------
 
-    query_embedding = model.encode(
-        query,
-        normalize_embeddings=True
-    ).tolist()
+    query_embedding = create_query_embedding(query)
 
 
     # --------------------------------------
