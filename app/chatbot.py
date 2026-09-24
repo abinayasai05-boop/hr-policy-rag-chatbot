@@ -4,7 +4,7 @@ import time
 
 from dotenv import load_dotenv
 from google import genai
-from sentence_transformers import SentenceTransformer
+from google.genai import types
 
 from app.database import get_connection
 
@@ -32,9 +32,7 @@ client = genai.Client(
     api_key=GEMINI_API_KEY
 )
 
-# ============================================================
-# GEMINI CONFIGURATION
-# ============================================================
+
 # ============================================================
 # GEMINI CONFIGURATION
 # ============================================================
@@ -46,34 +44,81 @@ GEMINI_MODEL = os.getenv(
 
 MAX_GEMINI_RETRIES = 2
 
+
+# ============================================================
+# GEMINI EMBEDDING CONFIGURATION
+# ============================================================
+
+EMBEDDING_MODEL = os.getenv(
+    "GEMINI_EMBEDDING_MODEL",
+    "gemini-embedding-2"
+)
+
+EMBEDDING_DIMENSION = int(
+    os.getenv(
+        "EMBEDDING_DIMENSION",
+        "768"
+    )
+)
+
+
 # ============================================================
 # RAG CONFIGURATION
 # ============================================================
 
 TOP_K = 3
 
-# Minimum similarity required
-# before using retrieved policy information.
+# Minimum similarity required before
+# retrieved policy information is used.
 
 SIMILARITY_THRESHOLD = 0.55
 
 # Number of previous conversation turns
-# used as memory.
+# used as conversation memory.
 
 MEMORY_LIMIT = 5
 
 
 # ============================================================
-# LOAD BGE-M3 EMBEDDING MODEL
+# EMBEDDING INITIALIZATION
 # ============================================================
 
-print("\nLoading BGE-M3 embedding model...")
+print("\nInitializing Gemini Embedding 2...")
 
-embedding_model = SentenceTransformer(
-    "BAAI/bge-m3"
+print(
+    f"Embedding model: {EMBEDDING_MODEL}"
 )
 
-print("BGE-M3 loaded successfully!")
+print(
+    f"Embedding dimension: {EMBEDDING_DIMENSION}"
+)
+
+print(
+    "Gemini Embedding 2 initialized successfully!"
+)
+
+
+# ============================================================
+# CREATE QUERY EMBEDDING
+# ============================================================
+
+def create_query_embedding(query):
+    """
+    Create a Gemini Embedding 2 vector
+    for the user's search query.
+    """
+
+    result = client.models.embed_content(
+        model=EMBEDDING_MODEL,
+        contents=query,
+        config=types.EmbedContentConfig(
+            output_dimensionality=EMBEDDING_DIMENSION
+        )
+    )
+
+    embedding = result.embeddings[0].values
+
+    return embedding
 
 
 # ============================================================
@@ -106,7 +151,6 @@ def generate_gemini_response(prompt):
                 or not response.text
                 or not response.text.strip()
             ):
-
                 raise RuntimeError(
                     "Gemini returned an empty response."
                 )
@@ -127,7 +171,7 @@ def generate_gemini_response(prompt):
             )
 
             # ------------------------------------------------
-            # Non-temporary error
+            # NON-TEMPORARY ERROR
             # ------------------------------------------------
 
             if not is_temporary_error:
@@ -138,7 +182,7 @@ def generate_gemini_response(prompt):
                 raise
 
             # ------------------------------------------------
-            # Last retry
+            # LAST RETRY
             # ------------------------------------------------
 
             if attempt == MAX_GEMINI_RETRIES - 1:
@@ -151,7 +195,7 @@ def generate_gemini_response(prompt):
                 return None
 
             # ------------------------------------------------
-            # Exponential backoff
+            # EXPONENTIAL BACKOFF
             # ------------------------------------------------
 
             wait_time = 2 ** attempt
@@ -291,10 +335,10 @@ def create_search_query(
         User: Tell me about annual leave.
 
     Current:
-        User: What about sick leave?
+        User: Can I use it for personal reasons?
 
     Search query:
-        What is the sick leave policy?
+        Can annual leave be used for personal reasons?
     """
 
     history = get_conversation_history(
@@ -303,7 +347,7 @@ def create_search_query(
     )
 
     # --------------------------------------------------------
-    # No previous conversation
+    # NO PREVIOUS CONVERSATION
     # --------------------------------------------------------
 
     if not history:
@@ -311,7 +355,7 @@ def create_search_query(
         return question
 
     # --------------------------------------------------------
-    # Query rewriting prompt
+    # QUERY REWRITING PROMPT
     # --------------------------------------------------------
 
     prompt = f"""
@@ -362,7 +406,7 @@ Return ONLY the standalone search query.
 """
 
     # --------------------------------------------------------
-    # Ask Gemini to rewrite query
+    # ASK GEMINI TO REWRITE QUERY
     # --------------------------------------------------------
 
     search_query = generate_gemini_response(
@@ -370,15 +414,10 @@ Return ONLY the standalone search query.
     )
 
     # --------------------------------------------------------
-    # Gemini unavailable
+    # GEMINI UNAVAILABLE
     # --------------------------------------------------------
 
     if not search_query:
-
-        print(
-            "\nUsing original question for "
-            "semantic search."
-        )
 
         return question
 
@@ -394,22 +433,33 @@ def search_policies(
     top_k=TOP_K
 ):
     """
-    Convert query to BGE-M3 embedding and
-    perform cosine similarity search using
+    Convert query to Gemini Embedding 2 vector
+    and perform cosine similarity search using
     PostgreSQL + pgvector.
     """
 
     # --------------------------------------------------------
-    # Generate BGE-M3 embedding
+    # GENERATE GEMINI EMBEDDING
     # --------------------------------------------------------
 
-    query_embedding = embedding_model.encode(
-        query,
-        normalize_embeddings=True
-    ).tolist()
+    query_embedding = create_query_embedding(
+        query
+    )
 
     # --------------------------------------------------------
-    # Connect to PostgreSQL
+    # VERIFY EMBEDDING DIMENSION
+    # --------------------------------------------------------
+
+    if len(query_embedding) != EMBEDDING_DIMENSION:
+
+        raise ValueError(
+            f"Embedding dimension mismatch. "
+            f"Expected {EMBEDDING_DIMENSION}, "
+            f"got {len(query_embedding)}."
+        )
+
+    # --------------------------------------------------------
+    # CONNECT TO POSTGRESQL
     # --------------------------------------------------------
 
     conn = get_connection()
@@ -419,7 +469,7 @@ def search_policies(
         cursor = conn.cursor()
 
         # ----------------------------------------------------
-        # pgvector cosine distance search
+        # PGVECTOR COSINE SIMILARITY SEARCH
         # ----------------------------------------------------
 
         cursor.execute(
@@ -451,7 +501,7 @@ def search_policies(
         conn.close()
 
     # --------------------------------------------------------
-    # Format retrieved policies
+    # FORMAT RETRIEVED POLICIES
     # --------------------------------------------------------
 
     policies = []
@@ -472,6 +522,9 @@ def search_policies(
                 "category": category,
                 "title": title,
                 "content": content,
+
+                # Used internally for hallucination
+                # protection. Never displayed to user.
                 "score": float(similarity)
             }
         )
@@ -517,7 +570,7 @@ def generate_answer(
 
     1. Conversation memory
     2. Query rewriting
-    3. BGE-M3 embedding
+    3. Gemini Embedding 2
     4. PostgreSQL + pgvector search
     5. Similarity threshold
     6. Gemini grounded answer
@@ -533,10 +586,7 @@ def generate_answer(
         session_id
     )
 
-    print(
-        "\nSearch Query:",
-        search_query
-    )
+    # Search query is intentionally NOT printed.
 
 
     # ========================================================
@@ -570,15 +620,13 @@ def generate_answer(
 
 
     # ========================================================
-    # STEP 4: GET TOP SIMILARITY SCORE
+    # STEP 4: INTERNAL SIMILARITY CHECK
     # ========================================================
 
-    top_score = results[0]["score"]
+    # Similarity score is used internally.
+    # It is NEVER shown to the user.
 
-    print(
-        "\nTop Similarity Score:",
-        round(top_score, 4)
-    )
+    top_score = results[0]["score"]
 
 
     # ========================================================
@@ -590,11 +638,6 @@ def generate_answer(
         answer = (
             "I couldn't find this information "
             "in the HR policies."
-        )
-
-        print(
-            "\nHallucination protection:"
-            " No sufficiently relevant policy found."
         )
 
         save_conversation(
@@ -726,20 +769,13 @@ exactly:
 
     if not answer:
 
-        # Do NOT invent an answer.
+        # Gemini is unavailable.
         #
-        # Instead, return the most relevant
-        # retrieved policy directly.
+        # Return the most relevant retrieved
+        # policy directly rather than inventing
+        # information.
 
         answer = results[0]["content"]
-
-        print(
-            "\nGemini unavailable."
-        )
-
-        print(
-            "Returning retrieved policy directly."
-        )
 
 
     # ========================================================
@@ -783,7 +819,15 @@ if __name__ == "__main__":
     )
 
     print(
-        "BAAI/bge-m3"
+        EMBEDDING_MODEL
+    )
+
+    print(
+        "\nEmbedding Dimension:"
+    )
+
+    print(
+        EMBEDDING_DIMENSION
     )
 
     print(
@@ -816,14 +860,6 @@ if __name__ == "__main__":
 
     print(
         "Enabled"
-    )
-
-    print(
-        "\nSimilarity Threshold:"
-    )
-
-    print(
-        SIMILARITY_THRESHOLD
     )
 
     print(
