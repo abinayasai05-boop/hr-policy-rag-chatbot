@@ -5,7 +5,6 @@ import time
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-
 from app.database import get_connection
 
 
@@ -96,6 +95,135 @@ print(
 print(
     "Gemini Embedding 2 initialized successfully!"
 )
+
+
+# ============================================================
+# SIMPLE MESSAGE / GREETING HANDLER
+# ============================================================
+
+def handle_simple_message(question):
+    """
+    Handle greetings and simple conversational messages
+    without performing RAG search.
+
+    Returns:
+        Response string if the message is a simple
+        conversational message.
+
+        None if the question should continue
+        through the RAG pipeline.
+    """
+
+    text = question.lower().strip()
+
+    # --------------------------------------------------------
+    # GREETINGS
+    # --------------------------------------------------------
+
+    greetings = {
+        "hi",
+        "hello",
+        "hey",
+        "hii",
+        "hiii",
+        "heyy",
+        "helo",
+        "hai"
+    }
+
+    if text in greetings:
+        return (
+            "Hello! 👋 I'm your HR Policy Assistant. "
+            "How can I help you with our HR policies?"
+        )
+
+    # --------------------------------------------------------
+    # TIME-BASED GREETINGS
+    # --------------------------------------------------------
+
+    if text in {
+        "good morning",
+        "morning",
+        "gm"
+    }:
+        return (
+            "Good morning! 👋 I'm your HR Policy Assistant. "
+            "How can I help you with our HR policies?"
+        )
+
+    if text in {
+        "good afternoon",
+        "afternoon"
+    }:
+        return (
+            "Good afternoon! 👋 I'm your HR Policy Assistant. "
+            "How can I help you with our HR policies?"
+        )
+
+    if text in {
+        "good evening",
+        "evening"
+    }:
+        return (
+            "Good evening! 👋 I'm your HR Policy Assistant. "
+            "How can I help you with our HR policies?"
+        )
+
+    # --------------------------------------------------------
+    # THANK YOU
+    # --------------------------------------------------------
+
+    if text in {
+        "thanks",
+        "thank you",
+        "thankyou",
+        "thx",
+        "thanks!",
+        "thank you!"
+    }:
+        return (
+            "You're welcome! 😊 "
+            "I'm happy to help with your HR policy questions."
+        )
+
+    # --------------------------------------------------------
+    # GOODBYE
+    # --------------------------------------------------------
+
+    if text in {
+        "goodbye",
+        "see you",
+        "see ya",
+        "bye bye"
+    }:
+        return (
+            "Goodbye! 👋 "
+            "Feel free to come back if you have any HR policy questions."
+        )
+
+    # --------------------------------------------------------
+    # HELP / INTRODUCTION
+    # --------------------------------------------------------
+
+    if text in {
+        "help",
+        "what can you do",
+        "what can you help me with",
+        "who are you"
+    }:
+        return (
+            "I'm an HR Policy Assistant. 🤖\n\n"
+            "I can help you find information about company "
+            "policies such as leave, working hours, remote work, "
+            "resignation, salary, overtime, performance reviews, "
+            "training, and other HR policies."
+        )
+
+    # --------------------------------------------------------
+    # NOT A SIMPLE MESSAGE
+    # --------------------------------------------------------
+
+    return None
 
 
 # ============================================================
@@ -328,17 +456,6 @@ def create_search_query(
     """
     Rewrite conversational questions into
     standalone HR policy search queries.
-
-    Example:
-
-    Previous:
-        User: Tell me about annual leave.
-
-    Current:
-        User: Can I use it for personal reasons?
-
-    Search query:
-        Can annual leave be used for personal reasons?
     """
 
     history = get_conversation_history(
@@ -568,14 +685,37 @@ def generate_answer(
     """
     Complete RAG pipeline:
 
-    1. Conversation memory
-    2. Query rewriting
-    3. Gemini Embedding 2
-    4. PostgreSQL + pgvector search
-    5. Similarity threshold
-    6. Gemini grounded answer
-    7. Conversation memory
+    1. Simple message detection
+    2. Conversation memory
+    3. Query rewriting
+    4. Gemini Embedding 2
+    5. PostgreSQL + pgvector search
+    6. Similarity threshold
+    7. Gemini grounded answer
+    8. Conversation memory
     """
+
+    # ========================================================
+    # STEP 0: HANDLE SIMPLE MESSAGES
+    # ========================================================
+
+    simple_response = handle_simple_message(
+        question
+    )
+
+    if simple_response:
+
+        # Save simple conversations as well
+        # so the session history remains complete.
+
+        save_conversation(
+            question,
+            simple_response,
+            session_id
+        )
+
+        return simple_response
+
 
     # ========================================================
     # STEP 1: CREATE SEARCH QUERY
@@ -585,8 +725,6 @@ def generate_answer(
         question,
         session_id
     )
-
-    # Search query is intentionally NOT printed.
 
 
     # ========================================================
@@ -622,9 +760,6 @@ def generate_answer(
     # ========================================================
     # STEP 4: INTERNAL SIMILARITY CHECK
     # ========================================================
-
-    # Similarity score is used internally.
-    # It is NEVER shown to the user.
 
     top_score = results[0]["score"]
 
@@ -747,8 +882,7 @@ FINAL INSTRUCTION
 Answer the CURRENT USER QUESTION using ONLY
 the HR POLICY INFORMATION.
 
-If the information is not present, respond
-exactly:
+If the information is not present, respond exactly:
 
 "I couldn't find this information in the HR policies."
 """
@@ -856,6 +990,14 @@ if __name__ == "__main__":
 
     print(
         "\nHallucination Protection:"
+    )
+
+    print(
+        "Enabled"
+    )
+
+    print(
+        "\nGreeting Handling:"
     )
 
     print(
